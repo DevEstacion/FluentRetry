@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentRetry", "FluentRetry.csproj", "{99D0BE9A-C6CE-4C72-881C-3122B3CA40F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentRetry", "FluentRetry\FluentRetry.csproj", "{99D0BE9A-C6CE-4C72-881C-3122B3CA40F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
