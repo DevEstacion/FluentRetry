@@ -10,4 +10,10 @@
       <_Parameter1>$(AssemblyName).Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+
+  <Target Name="PrepareReleaseNotes" BeforeTargets="GenerateNuspec">
+    <PropertyGroup>
+      <PackageDescription>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../../RELEASE-NOTES"))</PackageDescription>
+    </PropertyGroup>
+  </Target>
 </Project>
