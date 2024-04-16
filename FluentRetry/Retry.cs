@@ -3,6 +3,8 @@ namespace FluentRetry;
 [ExcludeFromCodeCoverage]
 public static class Retry
 {
+    internal static RetryConfiguration RetryConfiguration { get; set; } = new();
+
     public static GenericRetryAsync<T> WithResultAsync<T>(Func<Task<T>> runner)
     {
         return new GenericRetryAsync<T>(runner);
@@ -25,13 +27,7 @@ public static class Retry
 
     public static void SetGlobalRetryConfiguration(RetryConfiguration retryConfiguration)
     {
-        RetryInternals.RetryConfiguration
+        RetryConfiguration
             = retryConfiguration ?? throw new ArgumentNullException(nameof(retryConfiguration));
-    }
-
-    public static void SetGlobalLogHandler(Action<RetryLog> logHandler)
-    {
-        RetryInternals.RetryConfiguration.LogHandler
-            = logHandler ?? throw new ArgumentNullException(nameof(logHandler));
     }
 }

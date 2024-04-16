@@ -4,7 +4,7 @@ public partial class InternalRetryTests
 {
     public InternalRetryTests()
     {
-        RetryInternals.RetryConfiguration = new RetryConfiguration();
+        Retry.RetryConfiguration = new RetryConfiguration();
     }
 
     private class TestRetry : InternalRetry<TestRetry>
@@ -12,7 +12,7 @@ public partial class InternalRetryTests
         private readonly Action _runner;
         private readonly Func<bool> _onResult;
 
-        public TestRetry(Action runner, Func<bool> onResult = null)
+        public TestRetry(Action runner, Func<bool>? onResult = null)
         {
             _runner = runner;
             _onResult = onResult ?? (() => false);
@@ -73,27 +73,6 @@ public partial class InternalRetryTests
     }
 
     [Fact]
-    public void Execute_ThrowsException_InvokeLogHandler()
-    {
-        // arrange
-        var totalInvocation = 0;
-        var logInvocation = 0;
-        Retry.SetGlobalLogHandler(_ => logInvocation++);
-        var retry = new TestRetry(() =>
-        {
-            totalInvocation++;
-            throw new Exception();
-        });
-
-        // act
-        Assert.Throws<Exception>(retry.Run);
-
-        // assert
-        totalInvocation.Should().Be(4);
-        logInvocation.Should().Be(4);
-    }
-
-    [Fact]
     public void Execute_ThrowsException_WithOnException()
     {
         // arrange
@@ -133,30 +112,6 @@ public partial class InternalRetryTests
         // assert
         totalInvocation.Should().Be(1);
         onExceptionInvocation.Should().Be(0);
-    }
-
-    [Fact]
-    public void Execute_ThrowsException_WithOnException_SpecificException_IgnoreRetry_CallLogHandler()
-    {
-        // arrange
-        var totalInvocation = 0;
-        var onExceptionInvocation = 0;
-        var logInvocation = 0;
-        Retry.SetGlobalLogHandler(_ => logInvocation++);
-        var retry = new TestRetry(() =>
-            {
-                totalInvocation++;
-                throw new Exception();
-            })
-            .WithOnException(_ => onExceptionInvocation++, typeof(TaskCanceledException));
-
-        // act
-        Assert.Throws<Exception>(retry.Run);
-
-        // assert
-        totalInvocation.Should().Be(1);
-        onExceptionInvocation.Should().Be(0);
-        logInvocation.Should().Be(1);
     }
 
     [Fact]

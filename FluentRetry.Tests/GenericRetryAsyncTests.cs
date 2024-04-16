@@ -4,7 +4,7 @@ public class GenericRetryAsyncTests
 {
     public GenericRetryAsyncTests()
     {
-        RetryInternals.RetryConfiguration = new RetryConfiguration();
+        Retry.RetryConfiguration = new RetryConfiguration();
     }
 
     [Fact]

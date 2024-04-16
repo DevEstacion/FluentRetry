@@ -11,8 +11,9 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
 {
     internal Action<RetryContext> OnExceptionRunner { get; private set; } = delegate { };
     internal HashSet<Type> ExceptionToHandle { get; private set; } = new(new[] { typeof(Exception) });
+    internal HashSet<Type> ExceptionsToSkip { get; private set; } = new();
     internal string Caller { get; private set; } = "InternalRetry";
-    internal RetryConfiguration RetryConfiguration { get; private set; } = RetryInternals.RetryConfiguration;
+    internal RetryConfiguration RetryConfiguration { get; private set; } = Retry.RetryConfiguration;
 
     public TRetry WithOnException(Action<RetryContext> onExceptionRunner, params Type[] exceptionToHandle)
     {
@@ -22,6 +23,14 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
             : new HashSet<Type>(exceptionToHandle == Array.Empty<Type>()
                 ? new[] { typeof(Exception) }
                 : exceptionToHandle.Distinct());
+        return (TRetry)this;
+    }
+
+    public TRetry WithSkipExceptions(params Type[] exceptionsToSkip)
+    {
+        ExceptionsToSkip = exceptionsToSkip == null
+            ? throw new ArgumentNullException(nameof(exceptionsToSkip))
+            : new HashSet<Type>(exceptionsToSkip.Distinct());
         return (TRetry)this;
     }
 
@@ -64,25 +73,20 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
             }
             catch (Exception ex)
             {
-                var message
-                    = $"An exception occured during {Caller}. Remaining Retry: {totalRetry}. Message: {ex.Message}, Trace: {ex.StackTrace}";
-                if ((!ExceptionToHandle.Contains(typeof(Exception)) && !ExceptionToHandle.Contains(ex.GetType()))
+                var exceptionType = ex.GetType();
+                if ((!ExceptionToHandle.Contains(typeof(Exception)) && !ExceptionToHandle.Contains(exceptionType))
+                    || ExceptionsToSkip.Contains(exceptionType)
                     || totalRetry <= 0)
                 {
-                    RetryConfiguration.LogHandler.Invoke(new RetryLog
-                    { Exception = ex, Message = message, Type = RetryLogType.Exception });
                     throw;
                 }
 
                 var totalRetryDelay = RetryConfiguration.RetrySleepInMs + Random.Shared.Next(10, 100);
-                RetryConfiguration.LogHandler.Invoke(new RetryLog
-                {
-                    Exception = ex, Message = $"{message}, Sleep for {totalRetryDelay}ms", Type = RetryLogType.Warning
-                });
                 await Task.Delay(totalRetryDelay);
                 totalRetry--;
 
-                OnExceptionRunner.Invoke(new RetryContext { Exception = ex, RemainingRetry = totalRetry });
+                OnExceptionRunner.Invoke(new RetryContext
+                { Exception = ex, RemainingRetry = totalRetry, RetrySleetInMs = totalRetryDelay });
             }
         }
     }
