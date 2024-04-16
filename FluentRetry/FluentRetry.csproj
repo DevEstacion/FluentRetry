@@ -3,14 +3,15 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>10</LangVersion>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Title>FluentRetry</Title>
     <Authors>https://github.com/DevEstacion</Authors>
     <Description>A lightweight, simple and fluent retry implementation for C# without any frills or fancy things.</Description>
     <Copyright>https://github.com/DevEstacion</Copyright>
     <PackageProjectUrl>https://github.com/DevEstacion/FluentRetry</PackageProjectUrl>
     <RepositoryUrl>https://github.com/DevEstacion/FluentRetry</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageTags>c#,dotnet</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,9 +21,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath=""/>
-    <None Include="LICENSE" Pack="true" PackagePath=""/>
+    <!-- IMPORTANT: adding the Readme as a link -->
+    <None Include="..\README.md" Pack="true" PackagePath="">
+      <Link>Properties\README.md</Link>
+    </None>
+    <None Include="..\LICENSE" Pack="true" PackagePath="">
+      <Link>Properties\LICENSE</Link>
+    </None>
   </ItemGroup>
+
 
   <Target Name="PrepareReleaseNotes" BeforeTargets="GenerateNuspec">
     <PropertyGroup>
