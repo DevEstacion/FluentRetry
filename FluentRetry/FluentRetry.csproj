@@ -3,6 +3,14 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>10</LangVersion>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Title>FluentRetry</Title>
+    <Authors>https://github.com/DevEstacion</Authors>
+    <Description>A lightweight, simple and fluent retry implementation for C# without any frills or fancy things.</Description>
+    <Copyright>https://github.com/DevEstacion</Copyright>
+    <PackageProjectUrl>https://github.com/DevEstacion/FluentRetry</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/DevEstacion/FluentRetry</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,9 +19,14 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath=""/>
+    <None Include="LICENSE" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
   <Target Name="PrepareReleaseNotes" BeforeTargets="GenerateNuspec">
     <PropertyGroup>
-      <PackageDescription>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../RELEASE-NOTES.txt"))</PackageDescription>
+      <PackageDescription>$([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/../RELEASE-NOTES"))</PackageDescription>
     </PropertyGroup>
   </Target>
 </Project>
