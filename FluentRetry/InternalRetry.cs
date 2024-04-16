@@ -1,8 +1,4 @@
-using System.Collections.Generic;
-using System.Linq;
-
 // ReSharper disable MemberCanBeProtected.Global
-
 
 namespace FluentRetry;
 
@@ -10,35 +6,18 @@ namespace FluentRetry;
 public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
 {
     internal Action<RetryContext> OnExceptionRunner { get; private set; } = delegate { };
-    internal HashSet<Type> ExceptionToHandle { get; private set; } = new(new[] { typeof(Exception) });
-    internal HashSet<Type> ExceptionsToSkip { get; private set; } = new();
-    internal string Caller { get; private set; } = "InternalRetry";
+    internal Action<RetryContext> OnFinalExceptionRunner { get; private set; } = delegate { };
     internal RetryConfiguration RetryConfiguration { get; private set; } = Retry.RetryConfiguration;
 
-    public TRetry WithOnException(Action<RetryContext> onExceptionRunner, params Type[] exceptionToHandle)
+    public TRetry WithOnException(Action<RetryContext> onExceptionRunner)
     {
         OnExceptionRunner = onExceptionRunner ?? throw new ArgumentNullException(nameof(onExceptionRunner));
-        ExceptionToHandle = exceptionToHandle == null
-            ? throw new ArgumentNullException(nameof(exceptionToHandle))
-            : new HashSet<Type>(exceptionToHandle == Array.Empty<Type>()
-                ? new[] { typeof(Exception) }
-                : exceptionToHandle.Distinct());
         return (TRetry)this;
     }
 
-    public TRetry WithSkipExceptions(params Type[] exceptionsToSkip)
+    public TRetry WithOnFinalException(Action<RetryContext> onExceptionRunner)
     {
-        ExceptionsToSkip = exceptionsToSkip == null
-            ? throw new ArgumentNullException(nameof(exceptionsToSkip))
-            : new HashSet<Type>(exceptionsToSkip.Distinct());
-        return (TRetry)this;
-    }
-
-    public TRetry WithCaller(string caller)
-    {
-        Caller = string.IsNullOrWhiteSpace(caller)
-            ? throw new ArgumentNullException(nameof(caller))
-            : caller;
+        OnFinalExceptionRunner = onExceptionRunner ?? throw new ArgumentNullException(nameof(onExceptionRunner));
         return (TRetry)this;
     }
 
@@ -73,11 +52,10 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
             }
             catch (Exception ex)
             {
-                var exceptionType = ex.GetType();
-                if ((!ExceptionToHandle.Contains(typeof(Exception)) && !ExceptionToHandle.Contains(exceptionType))
-                    || ExceptionsToSkip.Contains(exceptionType)
-                    || totalRetry <= 0)
+                if (totalRetry <= 0)
                 {
+                    OnFinalExceptionRunner.Invoke(new RetryContext
+                        { Exception = ex, RemainingRetry = 0, RetrySleetInMs = 0 });
                     throw;
                 }
 
@@ -86,7 +64,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
                 totalRetry--;
 
                 OnExceptionRunner.Invoke(new RetryContext
-                { Exception = ex, RemainingRetry = totalRetry, RetrySleetInMs = totalRetryDelay });
+                    { Exception = ex, RemainingRetry = totalRetry, RetrySleetInMs = totalRetryDelay });
             }
         }
     }

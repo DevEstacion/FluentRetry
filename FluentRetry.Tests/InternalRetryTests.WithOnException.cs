@@ -1,5 +1,3 @@
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
-
 namespace FluentRetry.Tests;
 
 public partial class InternalRetryTests
@@ -11,8 +9,7 @@ public partial class InternalRetryTests
         var retry = new TestRetry(() => { });
 
         // assert
-        Assert.Throws<ArgumentNullException>(() => retry.WithOnException(null, typeof(TestCanceledException)));
-        Assert.Throws<ArgumentNullException>(() => retry.WithOnException(_ => { }, null));
+        Assert.Throws<ArgumentNullException>(() => retry.WithOnException(null));
     }
 
     [Fact]
@@ -27,54 +24,5 @@ public partial class InternalRetryTests
 
         // assert
         retry.OnExceptionRunner.Should().BeSameAs(onExceptionRunner);
-    }
-
-    [Fact]
-    public void WithOnExceptions_DuplicateException()
-    {
-        // arrange
-        var retry = new TestRetry(() => { });
-
-        // act
-        retry.WithOnException(_ => { }, typeof(TestCanceledException), typeof(TestCanceledException));
-
-        // assert
-        retry.ExceptionToHandle.Should().NotBeEmpty();
-        retry.ExceptionToHandle.Should().OnlyContain(x => x == typeof(TestCanceledException));
-    }
-
-    [Fact]
-    public void WithOnExceptions_EmptyException()
-    {
-        // arrange
-        var retry = new TestRetry(() => { });
-
-        // act
-        retry.WithOnException(_ => { });
-
-        // assert
-        retry.ExceptionToHandle.Should().NotBeEmpty();
-        retry.ExceptionToHandle.Should().OnlyContain(x => x == typeof(Exception));
-
-        // act
-        retry.WithOnException(_ => { }, Array.Empty<Type>());
-
-        // assert
-        retry.ExceptionToHandle.Should().NotBeEmpty();
-        retry.ExceptionToHandle.Should().OnlyContain(x => x == typeof(Exception));
-    }
-
-    [Fact]
-    public void WithOnExceptions_SpecificException()
-    {
-        // arrange
-        var retry = new TestRetry(() => { });
-
-        // act
-        retry.WithOnException(_ => { }, typeof(TestCanceledException));
-
-        // assert
-        retry.ExceptionToHandle.Should().NotBeEmpty();
-        retry.ExceptionToHandle.Should().OnlyContain(x => x == typeof(TestCanceledException));
     }
 }

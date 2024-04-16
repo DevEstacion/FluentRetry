@@ -94,27 +94,6 @@ public partial class InternalRetryTests
     }
 
     [Fact]
-    public void Execute_ThrowsException_WithOnException_SpecificException_IgnoreRetry()
-    {
-        // arrange
-        var totalInvocation = 0;
-        var onExceptionInvocation = 0;
-        var retry = new TestRetry(() =>
-            {
-                totalInvocation++;
-                throw new Exception();
-            })
-            .WithOnException(_ => onExceptionInvocation++, typeof(TaskCanceledException));
-
-        // act
-        Assert.Throws<Exception>(retry.Run);
-
-        // assert
-        totalInvocation.Should().Be(1);
-        onExceptionInvocation.Should().Be(0);
-    }
-
-    [Fact]
     public void Execute_WithOnResult()
     {
         // arrange
