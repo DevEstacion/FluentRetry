@@ -1,4 +1,4 @@
-﻿namespace FluentRetry;
+namespace FluentRetry;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class SimpleRetryAsync : InternalRetry<SimpleRetryAsync>

@@ -1,4 +1,4 @@
-﻿namespace FluentRetry;
+namespace FluentRetry;
 
 [ExcludeFromCodeCoverage]
 public class RetryConfiguration

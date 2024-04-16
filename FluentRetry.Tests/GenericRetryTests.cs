@@ -1,4 +1,4 @@
-﻿namespace FluentRetry.Tests;
+namespace FluentRetry.Tests;
 
 public class GenericRetryTests
 {

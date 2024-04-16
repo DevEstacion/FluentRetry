@@ -1,4 +1,4 @@
-﻿namespace FluentRetry;
+namespace FluentRetry;
 
 [ExcludeFromCodeCoverage]
 internal static class RetryInternals

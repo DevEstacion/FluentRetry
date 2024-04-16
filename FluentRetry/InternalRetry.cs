@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
 // ReSharper disable MemberCanBeProtected.Global
@@ -10,7 +10,7 @@ namespace FluentRetry;
 public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
 {
     internal Action<RetryContext> OnExceptionRunner { get; private set; } = delegate { };
-    internal HashSet<Type> ExceptionToHandle { get; private set; } = new(new[] {typeof(Exception)});
+    internal HashSet<Type> ExceptionToHandle { get; private set; } = new(new[] { typeof(Exception) });
     internal string Caller { get; private set; } = "InternalRetry";
     internal RetryConfiguration RetryConfiguration { get; private set; } = RetryInternals.RetryConfiguration;
 
@@ -20,7 +20,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
         ExceptionToHandle = exceptionToHandle == null
             ? throw new ArgumentNullException(nameof(exceptionToHandle))
             : new HashSet<Type>(exceptionToHandle == Array.Empty<Type>()
-                ? new[] {typeof(Exception)}
+                ? new[] { typeof(Exception) }
                 : exceptionToHandle.Distinct());
         return (TRetry)this;
     }
@@ -70,7 +70,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
                     || totalRetry <= 0)
                 {
                     RetryConfiguration.LogHandler.Invoke(new RetryLog
-                        {Exception = ex, Message = message, Type = RetryLogType.Exception});
+                    { Exception = ex, Message = message, Type = RetryLogType.Exception });
                     throw;
                 }
 
@@ -82,7 +82,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
                 await Task.Delay(totalRetryDelay);
                 totalRetry--;
 
-                OnExceptionRunner.Invoke(new RetryContext {Exception = ex, RemainingRetry = totalRetry});
+                OnExceptionRunner.Invoke(new RetryContext { Exception = ex, RemainingRetry = totalRetry });
             }
         }
     }
