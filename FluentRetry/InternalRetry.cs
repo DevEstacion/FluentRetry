@@ -8,6 +8,8 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
     internal Action<RetryContext> OnExceptionRunner { get; private set; } = delegate { };
     internal Action<RetryContext> OnFinalExceptionRunner { get; private set; } = delegate { };
     internal RetryConfiguration RetryConfiguration { get; private set; } = Retry.RetryConfiguration;
+    internal bool DoublingSleepOnRetry { get; private set; }
+    internal bool JitterEnabled { get; private set; } = true;
 
     public TRetry WithOnException(Action<RetryContext> onExceptionRunner)
     {
@@ -27,6 +29,18 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
         return (TRetry)this;
     }
 
+    public TRetry UseDoublingSleepOnRetry()
+    {
+        DoublingSleepOnRetry = true;
+        return (TRetry)this;
+    }
+
+    public TRetry DisableJitter()
+    {
+        JitterEnabled = false;
+        return (TRetry)this;
+    }
+
     protected internal abstract Task PerformRunner();
 
     protected internal virtual bool OnResult()
@@ -36,7 +50,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
 
     protected internal async Task Execute()
     {
-        var totalRetry = RetryConfiguration.RetryCount;
+        var remainingRetry = RetryConfiguration.RetryCount;
         while (true)
         {
             try
@@ -52,20 +66,37 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
             }
             catch (Exception ex)
             {
-                if (totalRetry <= 0)
+                if (remainingRetry <= 0)
                 {
                     OnFinalExceptionRunner.Invoke(new RetryContext
-                        { Exception = ex, RemainingRetry = 0, RetrySleetInMs = 0 });
+                    { Exception = ex, RemainingRetry = 0, RetrySleepInMs = 0 });
                     throw;
                 }
 
-                var totalRetryDelay = RetryConfiguration.RetrySleepInMs + Random.Shared.Next(10, 100);
-                await Task.Delay(totalRetryDelay);
-                totalRetry--;
+                var totalSleepDelay = GetTotalSleep(remainingRetry);
+                await Task.Delay(totalSleepDelay);
+                remainingRetry--;
 
                 OnExceptionRunner.Invoke(new RetryContext
-                    { Exception = ex, RemainingRetry = totalRetry, RetrySleetInMs = totalRetryDelay });
+                { Exception = ex, RemainingRetry = remainingRetry, RetrySleepInMs = totalSleepDelay });
             }
         }
+    }
+
+    private int GetTotalSleep(int remainingRetry)
+    {
+        var jitter = JitterEnabled ? Random.Shared.Next(10, 100) : 0;
+        var totalSleep = RetryConfiguration.RetrySleepInMs;
+        if (!DoublingSleepOnRetry)
+            return totalSleep + jitter;
+
+        var usedRetry = RetryConfiguration.RetryCount - remainingRetry;
+        while (usedRetry > 0)
+        {
+            totalSleep *= 2;
+            usedRetry--;
+        }
+
+        return totalSleep + jitter;
     }
 }

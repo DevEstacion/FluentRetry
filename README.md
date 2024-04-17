@@ -4,10 +4,13 @@ A lightweight, simple and fluent retry implementation for C# without any frills 
 
 ### The Api
 
-Entrypoint class is called `Retry` which will route all fluency methods to the correct implementation. There are 4 entrypoint methods all prefixed with the word `With`.
+Entrypoint class is called `Retry` which will route all fluency methods to the correct implementation. There are 4
+entrypoint methods all prefixed with the word `With`.
 
 ### Prerequisites
+
 Add the following using declaration in your class or in the `Using.cs`.
+
 ```csharp
 using FluentRetry;
 ```
@@ -22,6 +25,7 @@ Retry.WithResultAsync(..)
 ```
 
 ### Handling Exceptions
+
 You can handle the exceptions per retry and on the final exception separately. Use the following API below.
 
 Each delegate will receive the `RetryContext` instance that contains the following.
@@ -29,7 +33,7 @@ Each delegate will receive the `RetryContext` instance that contains the followi
 ```csharp
 Exception Exception
 int RemainingRetry
-int RetrySleetInMs
+int RetrySleepInMs
 ```
 
 #### On Each Exception
@@ -50,7 +54,26 @@ int RetrySleetInMs
 });
 ```
 
+## Double Retry Sleep on Retry
+
+You can enable a simple exponential backoff where the `RetrySleepInMs` is doubled on each retry. Default behavior is
+disabled.
+
+```csharp
+.UseDoublingSleepOnRetry()
+```
+
+## Disable Jitter
+
+An additional sleep ranging from 10 to 100ms is added as a "jitter" on each sleep retry. You can disable it by calling
+the API below.
+
+```csharp
+.DisableJitter()
+```
+
 ## Custom Retry Configuration
+
 Allows the caller to specify their own retry configurations on individual retry calls.
 
 ```csharp
@@ -72,6 +95,7 @@ Retry.SetGlobalRetryConfiguration(new RetryConfiguration
 ```
 
 ### Default Values
+
 There is an initial configuration set with the following values.
 
 ```csharp

@@ -9,5 +9,5 @@ public class RetryContext
 
     public Exception Exception { get; init; }
     public int RemainingRetry { get; init; }
-    public int RetrySleetInMs { get; init; }
+    public int RetrySleepInMs { get; init; }
 }

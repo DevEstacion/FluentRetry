@@ -7,39 +7,6 @@ public partial class InternalRetryTests
         Retry.RetryConfiguration = new RetryConfiguration();
     }
 
-    private class TestRetry : InternalRetry<TestRetry>
-    {
-        private readonly Action _runner;
-        private readonly Func<bool> _onResult;
-
-        public TestRetry(Action runner, Func<bool>? onResult = null)
-        {
-            _runner = runner;
-            _onResult = onResult ?? (() => false);
-        }
-
-        public void Run()
-        {
-            Execute().GetAwaiter().GetResult();
-        }
-
-        public Task RunAsync()
-        {
-            return Execute();
-        }
-
-        protected internal override Task PerformRunner()
-        {
-            _runner();
-            return Task.CompletedTask;
-        }
-
-        protected internal override bool OnResult()
-        {
-            return _onResult();
-        }
-    }
-
     [Fact]
     public void Execute()
     {
@@ -52,6 +19,22 @@ public partial class InternalRetryTests
 
         // assert
         totalInvocation.Should().Be(1);
+    }
+
+    [Fact]
+    public void Execute_UseDoublingSleepOnRetry()
+    {
+        // arrange
+        var usedSleepValues = new List<int>();
+        var retry = new TestRetry(() => throw new Exception())
+            .UseDoublingSleepOnRetry()
+            .WithOnException(context => usedSleepValues.Add(context.RetrySleepInMs));
+
+        // act
+        Assert.Throws<Exception>(retry.Run);
+
+        // assert
+        usedSleepValues.Should().HaveCount(3);
     }
 
     [Fact]
@@ -154,5 +137,38 @@ public partial class InternalRetryTests
         totalInvocation.Should().Be(4);
         onResultInvocation.Should().Be(4);
         onExceptionInvocation.Should().Be(3);
+    }
+
+    private class TestRetry : InternalRetry<TestRetry>
+    {
+        private readonly Func<bool> _onResult;
+        private readonly Action _runner;
+
+        public TestRetry(Action runner, Func<bool>? onResult = null)
+        {
+            _runner = runner;
+            _onResult = onResult ?? (() => false);
+        }
+
+        public void Run()
+        {
+            Execute().GetAwaiter().GetResult();
+        }
+
+        public Task RunAsync()
+        {
+            return Execute();
+        }
+
+        protected internal override Task PerformRunner()
+        {
+            _runner();
+            return Task.CompletedTask;
+        }
+
+        protected internal override bool OnResult()
+        {
+            return _onResult();
+        }
     }
 }
