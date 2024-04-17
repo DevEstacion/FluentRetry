@@ -10,6 +10,9 @@ public class SimpleRetry : InternalRetry<SimpleRetry>
         _actionRunner = actionRunner ?? throw new ArgumentNullException(nameof(actionRunner));
     }
 
+    /// <summary>
+    ///     Starts the execution of the initial delegate provided
+    /// </summary>
     public void Run()
     {
         Execute().GetAwaiter().GetResult();

@@ -18,6 +18,9 @@ public class GenericRetry<T> : InternalRetry<GenericRetry<T>>
         return this;
     }
 
+    /// <summary>
+    ///     Starts the execution of the initial delegate provided
+    /// </summary>
     public T Run()
     {
         Execute().GetAwaiter().GetResult();

@@ -18,6 +18,9 @@ public class GenericRetryAsync<T> : InternalRetry<GenericRetryAsync<T>>
         return this;
     }
 
+    /// <summary>
+    ///     Starts the execution of the initial delegate provided
+    /// </summary>
     public async Task<T> Run()
     {
         await Execute();

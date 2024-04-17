@@ -10,6 +10,9 @@ public class SimpleRetryAsync : InternalRetry<SimpleRetryAsync>
         _taskRunner = taskRunner ?? throw new ArgumentNullException(nameof(taskRunner));
     }
 
+    /// <summary>
+    ///     Starts the execution of the initial delegate provided
+    /// </summary>
     public Task Run()
     {
         return Execute();
