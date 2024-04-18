@@ -2,6 +2,13 @@
 
 A lightweight, simple and fluent retry implementation for C# without any frills or fancy things.
 
+## Installation
+You can get the package from [nuget.org](https://www.nuget.org/packages/FluentRetry) or run the following from your terminal.
+
+```bash
+dotnet add package FluentRetry
+```
+
 ### The Api
 
 Entrypoint class is called `Retry` which will route all fluency methods to the correct implementation. There are 4
@@ -22,6 +29,7 @@ Retry.With(..)
 Retry.WithAsync(..)
 Retry.WithResult(..)
 Retry.WithResultAsync(..)
+Retry.SetGlobalRetryConfiguration(..)
 ```
 
 ### Handling Exceptions
