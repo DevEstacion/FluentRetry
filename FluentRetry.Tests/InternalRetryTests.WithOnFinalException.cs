@@ -3,16 +3,6 @@ namespace FluentRetry.Tests;
 public partial class InternalRetryTests
 {
     [Fact]
-    public void WithOnFinalException_ThrowException()
-    {
-        // arrange
-        var retry = new TestRetry(() => { });
-
-        // assert
-        Assert.Throws<ArgumentNullException>(() => retry.WithOnFinalException(null));
-    }
-
-    [Fact]
     public void WithOnFinalException()
     {
         // arrange
@@ -24,5 +14,15 @@ public partial class InternalRetryTests
 
         // assert
         retry.OnFinalExceptionRunner.Should().BeSameAs(onExceptionRunner);
+    }
+
+    [Fact]
+    public void WithOnFinalException_ThrowException()
+    {
+        // arrange
+        var retry = new TestRetry(() => { });
+
+        // assert
+        Assert.Throws<ArgumentNullException>(() => retry.WithOnFinalException(null));
     }
 }

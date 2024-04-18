@@ -3,7 +3,9 @@
 A lightweight, simple and fluent retry implementation for C# without any frills or fancy things.
 
 ## Installation
-You can get the package from [nuget.org](https://www.nuget.org/packages/FluentRetry) or run the following from your terminal.
+
+You can get the package from [nuget.org](https://www.nuget.org/packages/FluentRetry) or run the following from your
+terminal.
 
 ```bash
 dotnet add package FluentRetry
@@ -77,7 +79,7 @@ An additional sleep ranging from 10 to 100ms is added as a "jitter" on each slee
 the API below.
 
 ```csharp
-.DisableJitter()
+.SetJitterEnabled()
 ```
 
 ## Custom Retry Configuration
@@ -88,7 +90,8 @@ Allows the caller to specify their own retry configurations on individual retry 
 .WithConfiguration(new RetryConfiguration
 {
     RetryCount = 5,
-    RetrySleepInMs = 1000
+    RetrySleepInMs = 1000,
+    JitterRange = new Tuple<int, int>(10, 100)
 })
 ```
 
@@ -98,7 +101,8 @@ Allows the caller to specify their own retry configurations on individual retry 
 Retry.SetGlobalRetryConfiguration(new RetryConfiguration
 {
     RetryCount = 5,
-    RetrySleepInMs = 1000
+    RetrySleepInMs = 1000,
+    JitterRange = new Tuple<int, int>(10, 100)
 })
 ```
 
@@ -108,5 +112,6 @@ There is an initial configuration set with the following values.
 
 ```csharp
 RetryCount = 3,
-RetrySleepInMs = 150
+RetrySleepInMs = 150,
+JitterRange = new Tuple<int, int>(10, 100)
 ```

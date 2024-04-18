@@ -59,12 +59,13 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
     }
 
     /// <summary>
-    ///     Disables the random jitter added to each retry together with <see cref="RetryConfiguration.RetrySleepInMs" />
+    ///     Uses <paramref name="isEnabled" /> to enable or disable the jitter added to each retry together with
+    ///     <see cref="RetryConfiguration.RetrySleepInMs" />
     /// </summary>
     /// <returns>Returns the fluent retry instance</returns>
-    public TRetry DisableJitter()
+    public TRetry SetJitterEnabled(bool isEnabled)
     {
-        JitterEnabled = false;
+        JitterEnabled = isEnabled;
         return (TRetry)this;
     }
 
@@ -112,7 +113,9 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
 
     private int GetTotalSleep(int remainingRetry)
     {
-        var jitter = JitterEnabled ? Random.Shared.Next(10, 100) : 0;
+        var jitter = JitterEnabled
+            ? Random.Shared.Next(RetryConfiguration.JitterRange.Item1, RetryConfiguration.JitterRange.Item2)
+            : 0;
         var totalSleep = RetryConfiguration.RetrySleepInMs;
         if (!DoublingSleepOnRetry)
             return totalSleep + jitter;
