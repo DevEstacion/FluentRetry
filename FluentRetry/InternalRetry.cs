@@ -114,7 +114,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
     private int GetTotalSleep(int remainingRetry)
     {
         var jitter = JitterEnabled
-            ? Random.Shared.Next(RetryConfiguration.JitterRange.Item1, RetryConfiguration.JitterRange.Item2)
+            ? Random.Shared.Next(RetryConfiguration.Jitter.Low, RetryConfiguration.Jitter.High)
             : 0;
         var totalSleep = RetryConfiguration.RetrySleepInMs;
         if (!DoublingSleepOnRetry)

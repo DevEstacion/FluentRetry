@@ -11,8 +11,8 @@ public class RetryConfigurationTests
         // assert
         config.RetrySleepInMs.Should().Be(150);
         config.RetryCount.Should().Be(3);
-        config.JitterRange.Item1.Should().Be(10);
-        config.JitterRange.Item2.Should().Be(100);
+        config.Jitter.Low.Should().Be(10);
+        config.Jitter.High.Should().Be(100);
     }
 
     [Fact]
@@ -23,30 +23,30 @@ public class RetryConfigurationTests
         {
             RetrySleepInMs = 1000,
             RetryCount = 10,
-            JitterRange = new Tuple<int, int>(100, 200)
+            Jitter = Jitter.Range(100, 200)
         };
 
         // assert
         config.RetrySleepInMs.Should().Be(1000);
         config.RetryCount.Should().Be(10);
-        config.JitterRange.Item1.Should().Be(100);
-        config.JitterRange.Item2.Should().Be(200);
+        config.Jitter.Low.Should().Be(100);
+        config.Jitter.High.Should().Be(200);
     }
 
     [Fact]
-    public void Set_JitterRange()
+    public void Set_Jitter()
     {
         // act
         var config = new RetryConfiguration
         {
-            JitterRange = new Tuple<int, int>(100, 200)
+            Jitter = Jitter.Range(100, 200)
         };
 
         // assert
         config.RetrySleepInMs.Should().Be(150);
         config.RetryCount.Should().Be(3);
-        config.JitterRange.Item1.Should().Be(100);
-        config.JitterRange.Item2.Should().Be(200);
+        config.Jitter.Low.Should().Be(100);
+        config.Jitter.High.Should().Be(200);
     }
 
     [Fact]
@@ -58,8 +58,8 @@ public class RetryConfigurationTests
         // assert
         config.RetrySleepInMs.Should().Be(150);
         config.RetryCount.Should().Be(10);
-        config.JitterRange.Item1.Should().Be(10);
-        config.JitterRange.Item2.Should().Be(100);
+        config.Jitter.Low.Should().Be(10);
+        config.Jitter.High.Should().Be(100);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class RetryConfigurationTests
         // assert
         config.RetrySleepInMs.Should().Be(1000);
         config.RetryCount.Should().Be(3);
-        config.JitterRange.Item1.Should().Be(10);
-        config.JitterRange.Item2.Should().Be(100);
+        config.Jitter.Low.Should().Be(10);
+        config.Jitter.High.Should().Be(100);
     }
 }

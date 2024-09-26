@@ -49,7 +49,7 @@ int RetrySleepInMs
 #### On Each Exception
 
 ```csharp
-.WithOnException(context => 
+.WithOnException(context =>
 {
     // do something
 });
@@ -58,7 +58,7 @@ int RetrySleepInMs
 #### On Final Exception
 
 ```csharp
-.WithOnFinalException(context => 
+.WithOnFinalException(context =>
 {
     // do something
 });
@@ -91,7 +91,7 @@ Allows the caller to specify their own retry configurations on individual retry 
 {
     RetryCount = 5,
     RetrySleepInMs = 1000,
-    JitterRange = new Tuple<int, int>(10, 100)
+    Jitter = Jitter.Range(10, 100)
 })
 ```
 
@@ -102,7 +102,7 @@ Retry.SetGlobalRetryConfiguration(new RetryConfiguration
 {
     RetryCount = 5,
     RetrySleepInMs = 1000,
-    JitterRange = new Tuple<int, int>(10, 100)
+    Jitter = Jitter.Range(10, 100)
 })
 ```
 
@@ -113,5 +113,5 @@ There is an initial configuration set with the following values.
 ```csharp
 RetryCount = 3,
 RetrySleepInMs = 150,
-JitterRange = new Tuple<int, int>(10, 100)
+Jitter = Jitter.Range(10, 100)
 ```
