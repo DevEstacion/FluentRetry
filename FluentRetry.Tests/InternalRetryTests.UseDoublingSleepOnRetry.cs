@@ -9,7 +9,7 @@ public partial class InternalRetryTests
         var retry = new TestRetry(() => { });
 
         // act
-        retry.UseDoublingSleepOnRetry();
+        retry.UseExponentialRetry();
 
         // assert
         retry.DoublingSleepOnRetry.Should().BeTrue();

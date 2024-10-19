@@ -12,6 +12,9 @@ public class GenericRetryAsync<T> : InternalRetry<GenericRetryAsync<T>>
         _taskRunner = taskRunner ?? throw new ArgumentNullException(nameof(taskRunner));
     }
 
+    /// <summary>
+    ///     Retries when <paramref name="onResultRunner"/> returns <c>true</c>
+    /// </summary>
     public GenericRetryAsync<T> WithOnResult(Func<T, bool> onResultRunner)
     {
         _onResultRunner = onResultRunner ?? throw new ArgumentNullException(nameof(onResultRunner));

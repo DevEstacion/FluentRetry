@@ -12,6 +12,9 @@ public class GenericRetry<T> : InternalRetry<GenericRetry<T>>
         _funcRunner = funcRunner ?? throw new ArgumentNullException(nameof(funcRunner));
     }
 
+    /// <summary>
+    ///     Retries when <paramref name="onResultRunner"/> returns <c>true</c>
+    /// </summary>
     public GenericRetry<T> WithOnResult(Func<T, bool> onResultRunner)
     {
         _onResultRunner = onResultRunner ?? throw new ArgumentNullException(nameof(onResultRunner));

@@ -99,7 +99,7 @@ public partial class InternalRetryTests
         // arrange
         var usedSleepValues = new List<int>();
         var retry = new TestRetry(() => throw new Exception())
-            .UseDoublingSleepOnRetry()
+            .UseExponentialRetry()
             .WithOnException(context => usedSleepValues.Add(context.RetrySleepInMs));
 
         // act

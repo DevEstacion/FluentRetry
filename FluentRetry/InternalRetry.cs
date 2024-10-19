@@ -52,7 +52,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
     ///     Enables the doubling of the <see cref="RetryConfiguration.RetrySleepInMs" /> value that is set
     /// </summary>
     /// <returns>Returns the fluent retry instance</returns>
-    public TRetry UseDoublingSleepOnRetry()
+    public TRetry UseExponentialRetry()
     {
         DoublingSleepOnRetry = true;
         return (TRetry)this;
