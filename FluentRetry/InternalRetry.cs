@@ -5,8 +5,8 @@ namespace FluentRetry;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
 {
-    internal Action<RetryContext> OnExceptionRunner { get; private set; } = delegate { };
-    internal Action<RetryContext> OnFinalExceptionRunner { get; private set; } = delegate { };
+    internal Action<RetryContext> OnExceptionRunner { get; private set; } = static _ => { };
+    internal Action<RetryContext> OnFinalExceptionRunner { get; private set; } = static _ => { };
     internal RetryConfiguration RetryConfiguration { get; private set; } = Retry.RetryConfiguration;
     internal bool DoublingSleepOnRetry { get; private set; }
     internal bool JitterEnabled { get; private set; } = true;
@@ -23,7 +23,6 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
         OnExceptionRunner = onExceptionRunner ?? throw new ArgumentNullException(nameof(onExceptionRunner));
         return (TRetry)this;
     }
-
 
     /// <summary>
     ///     Adds a delegate to invoke with the exception and retry information on final exception
@@ -50,7 +49,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
     }
 
     /// <summary>
-    ///     Enables the doubling of the <see cref="RetryConfiguration.RetrySleepInMs" /> value that is set
+    ///     Enables exponential backoff where the <see cref="RetryConfiguration.RetrySleepInMs" /> value doubles on each retry
     /// </summary>
     /// <returns>Returns the fluent retry instance</returns>
     public TRetry UseExponentialRetry()
@@ -90,57 +89,147 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
 
     protected internal async Task Execute()
     {
+        if (RetryConfiguration.RetryCount == 0)
+        {
+            await ExecuteOnce();
+            return;
+        }
+
+        await ExecuteWithRetries();
+    }
+
+    private async Task ExecuteWithRetries()
+    {
         var remainingRetry = RetryConfiguration.RetryCount;
+
         while (true)
         {
-            try
-            {
-                await PerformRunner();
-                var shouldRetry = OnResult();
-                if (shouldRetry)
-                {
-                    throw new Exception("Result was not expected.");
-                }
+            var result = await TryExecuteOperation();
 
+            if (result.IsSuccess)
+                return;
+
+            if (remainingRetry <= 0)
+            {
+                await HandleFinalFailure(result.Exception);
                 return;
             }
-            catch (Exception ex)
+
+            await HandleRetryAttempt(result.Exception, remainingRetry);
+            remainingRetry--;
+        }
+    }
+
+    private async Task<ExecutionResult> TryExecuteOperation()
+    {
+        try
+        {
+            await PerformRunner();
+            var shouldRetry = OnResult();
+
+            if (shouldRetry)
             {
-                if (remainingRetry <= 0)
-                {
-                    OnFinalExceptionRunner.Invoke(new RetryContext
-                    { Exception = ex, RemainingRetry = 0, RetrySleepInMs = 0 });
-                    if (ShouldThrowOnFinalException)
-                        throw;
-                    return;
-                }
-
-                var totalSleepDelay = GetTotalSleep(remainingRetry);
-                await Task.Delay(totalSleepDelay);
-                remainingRetry--;
-
-                OnExceptionRunner.Invoke(new RetryContext
-                { Exception = ex, RemainingRetry = remainingRetry, RetrySleepInMs = totalSleepDelay });
+                var syntheticException = new InvalidOperationException("Result condition not met.");
+                return ExecutionResult.Failure(syntheticException);
             }
+
+            return ExecutionResult.Success();
+        }
+        catch (Exception ex)
+        {
+            return ExecutionResult.Failure(ex);
+        }
+    }
+
+    private async Task HandleRetryAttempt(Exception exception, int remainingRetry)
+    {
+        var totalSleepDelay = GetTotalSleep(remainingRetry);
+        var currentAttempt = RetryConfiguration.RetryCount - remainingRetry + 1;
+
+        var context = new RetryContext
+        {
+            Exception = exception,
+            RemainingRetry = remainingRetry,
+            RetrySleepInMs = totalSleepDelay,
+            AttemptNumber = currentAttempt
+        };
+
+        OnExceptionRunner.Invoke(context);
+        await Task.Delay(totalSleepDelay);
+    }
+
+    private async Task HandleFinalFailure(Exception exception)
+    {
+        var finalContext = new RetryContext
+        {
+            Exception = exception,
+            RemainingRetry = 0,
+            RetrySleepInMs = 0,
+            AttemptNumber = RetryConfiguration.RetryCount + 1
+        };
+
+        OnFinalExceptionRunner.Invoke(finalContext);
+
+        if (ShouldThrowOnFinalException)
+            throw exception;
+    }
+
+    private readonly struct ExecutionResult
+    {
+        public bool IsSuccess { get; }
+        public Exception Exception { get; }
+
+        private ExecutionResult(bool isSuccess, Exception exception)
+        {
+            IsSuccess = isSuccess;
+            Exception = exception;
+        }
+
+        public static ExecutionResult Success() => new(true, null);
+        public static ExecutionResult Failure(Exception exception) => new(false, exception);
+    }
+
+    private async Task ExecuteOnce()
+    {
+        try
+        {
+            await PerformRunner();
+            var shouldRetry = OnResult();
+            if (shouldRetry)
+            {
+                throw new InvalidOperationException("Result condition not met and no retries configured.");
+            }
+        }
+        catch (Exception ex)
+        {
+            var context = new RetryContext
+            {
+                Exception = ex,
+                RemainingRetry = 0,
+                RetrySleepInMs = 0,
+                AttemptNumber = 1
+            };
+
+            OnFinalExceptionRunner.Invoke(context);
+
+            if (ShouldThrowOnFinalException)
+                throw;
         }
     }
 
     private int GetTotalSleep(int remainingRetry)
     {
-        var jitter = JitterEnabled
-            ? Random.Shared.Next(RetryConfiguration.Jitter.Low, RetryConfiguration.Jitter.High)
-            : 0;
-        var totalSleep = RetryConfiguration.RetrySleepInMs;
+        var jitter = JitterEnabled ? RetryConfiguration.Jitter.GetJitter() : 0;
+        var baseSleep = RetryConfiguration.RetrySleepInMs;
+
         if (!DoublingSleepOnRetry)
-            return totalSleep + jitter;
+            return baseSleep + jitter;
 
-        var usedRetry = RetryConfiguration.RetryCount - remainingRetry;
-        while (usedRetry > 0)
-        {
-            totalSleep *= 2;
-            usedRetry--;
-        }
+        // Calculate exponential backoff more efficiently
+        var attemptNumber = RetryConfiguration.RetryCount - remainingRetry + 1;
+        var exponentialSleep = baseSleep << Math.Min(attemptNumber - 1, 20); // Cap to prevent overflow
 
-        return totalSleep + jitter;
+        // Prevent integer overflow
+        return exponentialSleep > 0 ? exponentialSleep + jitter : int.MaxValue;
     }
 }

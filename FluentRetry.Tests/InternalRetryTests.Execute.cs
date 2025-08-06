@@ -63,7 +63,7 @@ public partial class InternalRetryTests
         {
             totalInvocation++;
             throw new Exception();
-        });
+        }).ThrowOnFinalException(true); // Explicitly enable exception throwing
 
         // act
         Assert.Throws<Exception>(retry.Run);
@@ -83,7 +83,8 @@ public partial class InternalRetryTests
                 totalInvocation++;
                 throw new Exception();
             })
-            .WithOnException(_ => onExceptionInvocation++);
+            .WithOnException(_ => onExceptionInvocation++)
+            .ThrowOnFinalException(true); // Explicitly enable exception throwing
 
         // act
         Assert.Throws<Exception>(retry.Run);
@@ -100,7 +101,8 @@ public partial class InternalRetryTests
         var usedSleepValues = new List<int>();
         var retry = new TestRetry(() => throw new Exception())
             .UseExponentialRetry()
-            .WithOnException(context => usedSleepValues.Add(context.RetrySleepInMs));
+            .WithOnException(context => usedSleepValues.Add(context.RetrySleepInMs))
+            .ThrowOnFinalException(true); // Explicitly enable exception throwing
 
         // act
         Assert.Throws<Exception>(retry.Run);
@@ -139,10 +141,10 @@ public partial class InternalRetryTests
         {
             onResultInvocation++;
             return true;
-        });
+        }).ThrowOnFinalException(true); // Explicitly enable exception throwing
 
         // act
-        Assert.Throws<Exception>(retry.Run);
+        Assert.Throws<InvalidOperationException>(retry.Run); // Updated to expect InvalidOperationException
 
         // assert
         totalInvocation.Should().Be(4);
@@ -161,10 +163,11 @@ public partial class InternalRetryTests
                 onResultInvocation++;
                 return true;
             })
-            .WithOnException(_ => onExceptionInvocation++);
+            .WithOnException(_ => onExceptionInvocation++)
+            .ThrowOnFinalException(true); // Explicitly enable exception throwing
 
         // act
-        Assert.Throws<Exception>(retry.Run);
+        Assert.Throws<InvalidOperationException>(retry.Run); // Updated to expect InvalidOperationException
 
         // assert
         totalInvocation.Should().Be(4);
