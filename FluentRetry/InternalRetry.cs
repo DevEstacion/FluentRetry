@@ -10,6 +10,7 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
     internal RetryConfiguration RetryConfiguration { get; private set; } = Retry.RetryConfiguration;
     internal bool DoublingSleepOnRetry { get; private set; }
     internal bool JitterEnabled { get; private set; } = true;
+    internal bool ShouldThrowOnFinalException { get; private set; }
 
     /// <summary>
     ///     Adds a delegate to invoke with the exception and retry information every exception
@@ -69,6 +70,17 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
         return (TRetry)this;
     }
 
+    /// <summary>
+    ///     Use this to control whether an exception should be thrown on the final retry attempt
+    /// </summary>
+    /// <param name="isEnabled">True to throw an exception on the final retry, false otherwise</param>
+    /// <returns>Returns the fluent retry instance</returns>
+    public TRetry ThrowOnFinalException(bool isEnabled)
+    {
+        ShouldThrowOnFinalException = isEnabled;
+        return (TRetry)this;
+    }
+
     protected internal abstract Task PerformRunner();
 
     protected internal virtual bool OnResult()
@@ -98,7 +110,9 @@ public abstract class InternalRetry<TRetry> where TRetry : InternalRetry<TRetry>
                 {
                     OnFinalExceptionRunner.Invoke(new RetryContext
                     { Exception = ex, RemainingRetry = 0, RetrySleepInMs = 0 });
-                    throw;
+                    if (ShouldThrowOnFinalException)
+                        throw;
+                    return;
                 }
 
                 var totalSleepDelay = GetTotalSleep(remainingRetry);
