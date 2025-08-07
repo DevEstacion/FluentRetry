@@ -1,6 +1,3 @@
-using FluentAssertions;
-using Xunit;
-
 namespace FluentRetry.Tests;
 
 public class RetryPresetsTests
@@ -131,7 +128,9 @@ public class RetryPresetsTests
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
+#pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
+#pragma warning restore CS0162
         };
 
         // Act
@@ -153,7 +152,9 @@ public class RetryPresetsTests
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
+#pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
+#pragma warning restore CS0162
         };
 
         // Act
@@ -175,7 +176,9 @@ public class RetryPresetsTests
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
+#pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
+#pragma warning restore CS0162
         };
 
         // Act
@@ -282,7 +285,9 @@ public class RetryPresetsTests
             await Task.Delay(1);
             invocations++;
             throw new InvalidOperationException("Always fails");
+#pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
+#pragma warning restore CS0162
         };
 
         // Act
