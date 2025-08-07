@@ -10,7 +10,7 @@ public class RetryTests
     {
         // Arrange
         var invocations = 0;
-        Action action = () => invocations++;
+        void action() => invocations++;
 
         // Act
         var builder = Retry.Do(action);
@@ -28,7 +28,7 @@ public class RetryTests
     public void Do_WithNullAction_ThrowsArgumentNullException()
     {
         // Act & Assert
-        var act = () => Retry.Do((Action)null!);
+        var act = () => Retry.Do(null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
@@ -38,11 +38,11 @@ public class RetryTests
     {
         // Arrange
         var invocations = 0;
-        Func<Task> action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
-        };
+        }
 
         // Act
         var builder = Retry.DoAsync(action);
@@ -70,11 +70,11 @@ public class RetryTests
     {
         // Arrange
         var invocations = 0;
-        Func<string> func = () =>
+        string func()
         {
             invocations++;
             return $"Result {invocations}";
-        };
+        }
 
         // Act
         var builder = Retry.Do(func);
@@ -103,12 +103,12 @@ public class RetryTests
     {
         // Arrange
         var invocations = 0;
-        Func<Task<int>> func = async () =>
+        async Task<int> func()
         {
             await Task.Delay(1);
             invocations++;
             return invocations * 10;
-        };
+        }
 
         // Act
         var builder = Retry.DoAsync(func);
@@ -136,7 +136,7 @@ public class RetryTests
     public void SetGlobalDefaults_UpdatesDefaultValues()
     {
         // Arrange
-        var originalDefaults = Retry.GetDefaults();
+        var (attempts, delayMs) = Retry.GetDefaults();
 
         try
         {
@@ -150,11 +150,11 @@ public class RetryTests
 
             // Verify new retry operations use the new defaults
             var invocations = 0;
-            var action = () =>
+            void action()
             {
                 invocations++;
                 throw new InvalidOperationException("Always fails");
-            };
+            }
 
             Retry.Do(action).Execute();
             invocations.Should().Be(7); // Should use new default
@@ -162,7 +162,7 @@ public class RetryTests
         finally
         {
             // Cleanup - restore original defaults
-            Retry.SetGlobalDefaults(originalDefaults.attempts, originalDefaults.delayMs);
+            Retry.SetGlobalDefaults(attempts, delayMs);
         }
     }
 
@@ -170,7 +170,7 @@ public class RetryTests
     public void SetGlobalDefaults_WithNegativeValues_ClampsToReasonableValues()
     {
         // Arrange
-        var originalDefaults = Retry.GetDefaults();
+        var (attempts, delayMs) = Retry.GetDefaults();
 
         try
         {
@@ -184,7 +184,7 @@ public class RetryTests
 
             // But when used in practice, it should be clamped
             var invocations = 0;
-            var action = () => invocations++;
+            int action() => invocations++;
 
             Retry.Do(action).Execute();
             invocations.Should().Be(1); // Should execute at least once regardless of negative attempts
@@ -192,7 +192,7 @@ public class RetryTests
         finally
         {
             // Cleanup
-            Retry.SetGlobalDefaults(originalDefaults.attempts, originalDefaults.delayMs);
+            Retry.SetGlobalDefaults(attempts, delayMs);
         }
     }
 
@@ -200,18 +200,18 @@ public class RetryTests
     public void GetDefaults_ReturnsCurrentDefaultValues()
     {
         // Act
-        var defaults = Retry.GetDefaults();
+        var (attempts, delayMs) = Retry.GetDefaults();
 
         // Assert
-        defaults.attempts.Should().BeGreaterThan(0);
-        defaults.delayMs.Should().BeGreaterThanOrEqualTo(0);
+        attempts.Should().BeGreaterThan(0);
+        delayMs.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
     public void SetGlobalDefaults_AffectsSubsequentRetryOperations()
     {
         // Arrange
-        var originalDefaults = Retry.GetDefaults();
+        var (attempts, delayMs) = Retry.GetDefaults();
 
         try
         {
@@ -220,17 +220,17 @@ public class RetryTests
             var invocations1 = 0;
             var invocations2 = 0;
 
-            var action1 = () =>
+            void action1()
             {
                 invocations1++;
                 throw new InvalidOperationException("Always fails");
-            };
+            }
 
-            var action2 = () =>
+            void action2()
             {
                 invocations2++;
                 throw new InvalidOperationException("Always fails");
-            };
+            }
 
             // Act
             Retry.Do(action1).Execute();
@@ -243,7 +243,7 @@ public class RetryTests
         finally
         {
             // Cleanup
-            Retry.SetGlobalDefaults(originalDefaults.attempts, originalDefaults.delayMs);
+            Retry.SetGlobalDefaults(attempts, delayMs);
         }
     }
 
@@ -251,13 +251,13 @@ public class RetryTests
     public void SetGlobalDefaults_DoesNotAffectExistingBuilders()
     {
         // Arrange
-        var originalDefaults = Retry.GetDefaults();
+        var (attempts, delayMs) = Retry.GetDefaults();
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         var builder = Retry.Do(action); // Create builder with current defaults
 
@@ -271,12 +271,12 @@ public class RetryTests
 
             // Assert
             // Should use the defaults from when the builder was created
-            invocations.Should().Be(originalDefaults.attempts);
+            invocations.Should().Be(attempts);
         }
         finally
         {
             // Cleanup
-            Retry.SetGlobalDefaults(originalDefaults.attempts, originalDefaults.delayMs);
+            Retry.SetGlobalDefaults(attempts, delayMs);
         }
     }
 

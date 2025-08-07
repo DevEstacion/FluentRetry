@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace FluentRetry;
 
 /// <summary>
@@ -20,9 +18,9 @@ public class RetryBuilder
     internal RetryBuilder(Func<Task<object>> operation)
     {
         _operation = operation ?? throw new ArgumentNullException(nameof(operation));
-        var defaults = Retry.GetDefaults();
-        _maxAttempts = defaults.attempts;
-        _delayMs = defaults.delayMs;
+        var (attempts, delayMs) = Retry.GetDefaults();
+        _maxAttempts = attempts;
+        _delayMs = delayMs;
     }
 
     /// <summary>
@@ -135,7 +133,8 @@ public class RetryBuilder
 
     private async Task DelayBeforeRetry(int attempt)
     {
-        if (_delayMs <= 0) return;
+        if (_delayMs <= 0)
+            return;
 
         var delay = _delayMs;
 
@@ -168,9 +167,9 @@ public class RetryBuilder<T>
     internal RetryBuilder(Func<Task<T>> operation)
     {
         _operation = operation ?? throw new ArgumentNullException(nameof(operation));
-        var defaults = Retry.GetDefaults();
-        _maxAttempts = defaults.attempts;
-        _delayMs = defaults.delayMs;
+        var (attempts, delayMs) = Retry.GetDefaults();
+        _maxAttempts = attempts;
+        _delayMs = delayMs;
     }
 
     /// <summary>
@@ -310,7 +309,8 @@ public class RetryBuilder<T>
 
     private async Task DelayBeforeRetry(int attempt)
     {
-        if (_delayMs <= 0) return;
+        if (_delayMs <= 0)
+            return;
 
         var delay = _delayMs;
 

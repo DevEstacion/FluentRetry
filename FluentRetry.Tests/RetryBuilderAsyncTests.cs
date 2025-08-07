@@ -7,11 +7,11 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
-        };
+        }
 
         // Act
         await Retry.DoAsync(action).ExecuteAsync();
@@ -25,13 +25,13 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
-        };
+        }
 
         // Act
         await Retry.DoAsync(action)
@@ -48,12 +48,12 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act & Assert
         var act = async () => await Retry.DoAsync(action)
@@ -70,12 +70,12 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act & Assert
         var act = async () => await Retry.DoAsync(action)
@@ -94,12 +94,12 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var func = async () =>
+        async Task<string> func()
         {
             await Task.Delay(1);
             invocations++;
             return $"Result {invocations}";
-        };
+        }
 
         // Act
         var result = await Retry.DoAsync(func).ExecuteAsync();
@@ -114,14 +114,14 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var func = async () =>
+        async Task<string> func()
         {
             await Task.Delay(1);
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
             return $"Result {invocations}";
-        };
+        }
 
         // Act
         var result = await Retry.DoAsync(func)
@@ -139,12 +139,12 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var func = async () =>
+        async Task<int> func()
         {
             await Task.Delay(1);
             invocations++;
             return invocations < 3 ? 0 : 42;
-        };
+        }
 
         // Act
         var result = await Retry.DoAsync(func)
@@ -163,13 +163,13 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             if (invocations < 2)
                 throw new InvalidOperationException("Fails first time");
-        };
+        }
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -192,12 +192,12 @@ public class RetryBuilderAsyncTests
         var invocations = 0;
         var retryCallbacks = new List<(Exception ex, int attempt)>();
 
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             throw new InvalidOperationException($"Failure {invocations}");
-        };
+        }
 
         // Act
         await Retry.DoAsync(action)
@@ -220,12 +220,12 @@ public class RetryBuilderAsyncTests
         var invocations = 0;
         Exception? failureException = null;
 
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         await Retry.DoAsync(action)
@@ -247,12 +247,12 @@ public class RetryBuilderAsyncTests
         using var cts = new CancellationTokenSource();
         var invocations = 0;
 
-        var func = async () =>
+        async Task<string> func()
         {
             invocations++;
             await Task.Delay(100, cts.Token); // Will be cancelled
             return "Should not reach here";
-        };
+        }
 
         // Act & Assert
         cts.CancelAfter(50); // Cancel after 50ms
@@ -271,13 +271,13 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        Task<string> func()
         {
             invocations++;
             if (invocations == 1)
                 return Task.FromException<string>(new InvalidOperationException("Task failed"));
             return Task.FromResult($"Success {invocations}");
-        };
+        }
 
         // Act
         var result = await Retry.DoAsync(func)
@@ -295,11 +295,11 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        Task<string> func()
         {
             invocations++;
             return Task.FromCanceled<string>(new CancellationToken(true));
-        };
+        }
 
         // Act & Assert
         var act = async () => await Retry.DoAsync(func)
@@ -319,7 +319,7 @@ public class RetryBuilderAsyncTests
         var delays = new List<long>();
         var lastTime = DateTimeOffset.UtcNow;
 
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             var now = DateTimeOffset.UtcNow;
@@ -330,7 +330,7 @@ public class RetryBuilderAsyncTests
             lastTime = now;
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         await Retry.DoAsync(action)
@@ -351,14 +351,14 @@ public class RetryBuilderAsyncTests
     {
         // Arrange
         var invocations = 0;
-        var func = async () =>
+        async Task<int> func()
         {
             await Task.Delay(10);
             Interlocked.Increment(ref invocations);
             if (invocations <= 2)
                 throw new InvalidOperationException("First two fail");
             return invocations;
-        };
+        }
 
         // Act
         var tasks = Enumerable.Range(0, 3).Select(_ =>

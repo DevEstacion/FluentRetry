@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace FluentRetry;
 
 /// <summary>
@@ -64,5 +62,8 @@ public static class Retry
         _defaultDelayMs = Math.Max(0, delayMs);
     }
 
-    internal static (int attempts, int delayMs) GetDefaults() => (_defaultAttempts, _defaultDelayMs);
+    internal static (int attempts, int delayMs) GetDefaults()
+    {
+        return (_defaultAttempts, _defaultDelayMs);
+    }
 }

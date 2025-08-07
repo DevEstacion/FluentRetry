@@ -7,11 +7,11 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -27,11 +27,11 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -47,11 +47,11 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -70,7 +70,7 @@ public class RetryPresetsTests
         var delays = new List<long>();
         var lastTime = DateTimeOffset.UtcNow;
 
-        var action = () =>
+        void action()
         {
             var now = DateTimeOffset.UtcNow;
             if (invocations > 0)
@@ -80,7 +80,7 @@ public class RetryPresetsTests
             lastTime = now;
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -99,12 +99,12 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             if (invocations < 2)
                 throw new InvalidOperationException("Fails first time");
-        };
+        }
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -115,8 +115,8 @@ public class RetryPresetsTests
 
         // Assert
         invocations.Should().Be(2);
-        // Database preset should have longer delays (base 1000ms, but with jitter it varies)
-        stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(500);
+        // Database preset should have longer delays than Standard (now base 300ms with jitter)
+        stopwatch.ElapsedMilliseconds.Should().BeGreaterThan(150);
     }
 
     [Fact]
@@ -124,14 +124,14 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        string func()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
 #pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
 #pragma warning restore CS0162
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -148,14 +148,14 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        string func()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
 #pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
 #pragma warning restore CS0162
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -172,14 +172,14 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        string func()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
 #pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
 #pragma warning restore CS0162
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -196,11 +196,11 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -217,11 +217,11 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -238,12 +238,12 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         await Retry.DoAsync(action)
@@ -259,12 +259,12 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var action = async () =>
+        async Task action()
         {
             await Task.Delay(1);
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         await Retry.DoAsync(action)
@@ -280,7 +280,7 @@ public class RetryPresetsTests
     {
         // Arrange
         var invocations = 0;
-        var func = async () =>
+        async Task<string> func()
         {
             await Task.Delay(1);
             invocations++;
@@ -288,7 +288,7 @@ public class RetryPresetsTests
 #pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
 #pragma warning restore CS0162
-        };
+        }
 
         // Act
         var result = await Retry.DoAsync(func)

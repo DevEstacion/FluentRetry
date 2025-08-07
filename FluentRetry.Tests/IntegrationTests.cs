@@ -11,7 +11,7 @@ public class IntegrationTests
         var attemptCount = 0;
         var httpResponseCodes = new[] { 500, 503, 200 }; // Fail twice, then succeed
 
-        var httpSimulation = () =>
+        string httpSimulation()
         {
             var responseCode = httpResponseCodes[Math.Min(attemptCount, httpResponseCodes.Length - 1)];
             attemptCount++;
@@ -20,7 +20,7 @@ public class IntegrationTests
                 throw new HttpRequestException($"HTTP {responseCode} error");
 
             return $"Success with HTTP {responseCode}";
-        };
+        }
 
         // Act
         var result = Retry.Do(httpSimulation)
@@ -43,7 +43,7 @@ public class IntegrationTests
         var attemptCount = 0;
         var timeoutOccursOn = new[] { 1, 2 }; // Timeout on first two attempts
 
-        var databaseSimulation = async () =>
+        async var databaseSimulation()
         {
             await Task.Delay(1); // Simulate async database call
             attemptCount++;
@@ -52,15 +52,12 @@ public class IntegrationTests
                 throw new TimeoutException("Database connection timeout");
 
             return new { UserId = 123, Name = "John Doe" };
-        };
+        }
 
         // Act
-        var result = await Retry.DoAsync(databaseSimulation)
+        var result = await Retry.DoAsync((var)databaseSimulation)
             .Database()
-            .OnRetry((ex, attempt) =>
-            {
-                ex.Should().BeOfType<TimeoutException>();
-            })
+            .OnRetry((ex, attempt) => ex.Should().BeOfType<TimeoutException>())
             .ExecuteAsync();
 
         // Assert
@@ -77,7 +74,7 @@ public class IntegrationTests
         var attemptCount = 0;
         var fileLockReleasedAfter = 2;
 
-        var fileReadSimulation = () =>
+        string fileReadSimulation()
         {
             attemptCount++;
 
@@ -85,16 +82,13 @@ public class IntegrationTests
                 throw new IOException("File is locked by another process");
 
             return "File content successfully read";
-        };
+        }
 
         // Act
         var result = Retry.Do(fileReadSimulation)
             .Attempts(3)
             .Delay(1) // Fast test
-            .OnRetry((ex, attempt) =>
-            {
-                ex.Should().BeOfType<IOException>();
-            })
+            .OnRetry((ex, attempt) => ex.Should().BeOfType<IOException>())
             .Execute();
 
         // Assert
@@ -110,38 +104,27 @@ public class IntegrationTests
         var retryLog = new List<string>();
         var failureLog = new List<string>();
 
-        var complexOperation = () =>
+        int complexOperation()
         {
             attemptCount++;
 
-            switch (attemptCount)
+            return attemptCount switch
             {
-                case 1:
-                    throw new UnauthorizedAccessException("Authentication failed");
-                case 2:
-                    throw new TimeoutException("Request timeout");
-                case 3:
-                    return 0; // Invalid result that should trigger retry condition
-                case 4:
-                    return 42; // Success
-                default:
-                    throw new InvalidOperationException("Unexpected attempt");
-            }
-        };
+                1 => throw new UnauthorizedAccessException("Authentication failed"),
+                2 => throw new TimeoutException("Request timeout"),
+                3 => 0,// Invalid result that should trigger retry condition
+                4 => 42,// Success
+                _ => throw new InvalidOperationException("Unexpected attempt"),
+            };
+        }
 
         // Act
         var result = Retry.Do(complexOperation)
             .Attempts(5)
             .Delay(1)
             .RetryWhen(value => value == 0)
-            .OnRetry((ex, attempt) =>
-            {
-                retryLog.Add($"Attempt {attempt}: {ex.GetType().Name}");
-            })
-            .OnFailure(ex =>
-            {
-                failureLog.Add($"Final failure: {ex.GetType().Name}");
-            })
+            .OnRetry((ex, attempt) => retryLog.Add($"Attempt {attempt}: {ex.GetType().Name}"))
+            .OnFailure(ex => failureLog.Add($"Final failure: {ex.GetType().Name}"))
             .Execute();
 
         // Assert
@@ -161,7 +144,7 @@ public class IntegrationTests
         var globalCounter = 0;
         var results = new ConcurrentBag<int>();
 
-        var concurrentOperation = async (int operationId) =>
+        async Task<int> concurrentOperation(int operationId)
         {
             await Task.Delay(Random.Shared.Next(1, 10)); // Random delay
             var localAttempt = Interlocked.Increment(ref globalCounter);
@@ -170,8 +153,8 @@ public class IntegrationTests
             if (localAttempt % 3 == 0)
                 throw new InvalidOperationException($"Operation {operationId} failed on attempt {localAttempt}");
 
-            return operationId * 100 + localAttempt;
-        };
+            return (operationId * 100) + localAttempt;
+        }
 
         // Act
         var tasks = Enumerable.Range(1, 5).Select(async operationId =>
@@ -231,7 +214,7 @@ public class IntegrationTests
         var delays = new List<long>();
         var lastTime = DateTimeOffset.UtcNow;
 
-        var operation = () =>
+        void operation()
         {
             var now = DateTimeOffset.UtcNow;
             if (attemptCount > 0)
@@ -241,7 +224,7 @@ public class IntegrationTests
             lastTime = now;
             attemptCount++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(operation)

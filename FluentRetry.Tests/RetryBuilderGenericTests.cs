@@ -7,11 +7,11 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        string func()
         {
             invocations++;
             return $"Result {invocations}";
-        };
+        }
 
         // Act
         var result = Retry.Do(func).Execute();
@@ -26,13 +26,13 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        string func()
         {
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
             return $"Result {invocations}";
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -50,14 +50,14 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        string func()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
 #pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
 #pragma warning restore CS0162
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -75,14 +75,14 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        string func()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
 #pragma warning disable CS0162 // Unreachable code detected
             return "Should not reach here";
 #pragma warning restore CS0162
-        };
+        }
 
         // Act & Assert
         var act = () => Retry.Do(func)
@@ -101,11 +101,11 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        int func()
         {
             invocations++;
             return invocations < 3 ? 0 : 42; // Return 0 first two times, then 42
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -124,11 +124,11 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        int func()
         {
             invocations++;
             return 42; // Always returns non-zero
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -147,11 +147,11 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        int func()
         {
             invocations++;
             return invocations;
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -170,11 +170,11 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        int func()
         {
             invocations++;
             return invocations;
-        };
+        }
 
         // Act & Assert
         var act = () => Retry.Do(func)
@@ -194,7 +194,7 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        int func()
         {
             invocations++;
             if (invocations == 1)
@@ -202,7 +202,7 @@ public class RetryBuilderGenericTests
             if (invocations == 2)
                 return 0; // Second attempt returns 0 (should retry)
             return 42; // Third attempt succeeds
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -223,7 +223,7 @@ public class RetryBuilderGenericTests
         var invocations = 0;
         var retryCallbacks = new List<(Exception ex, int attempt)>();
 
-        var func = () =>
+        int func()
         {
             invocations++;
             if (invocations == 1)
@@ -231,7 +231,7 @@ public class RetryBuilderGenericTests
             if (invocations == 2)
                 return 0; // Should trigger retry condition
             return 42;
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -255,13 +255,13 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        int func()
         {
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
             return invocations * 10;
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -279,13 +279,13 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        int? func()
         {
             invocations++;
             if (invocations == 1)
-                return (int?)null;
+                return null;
             return 42;
-        };
+        }
 
         // Act
         var result = Retry.Do(func)
@@ -304,16 +304,16 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func = () =>
+        var func()
         {
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
             return new { Id = invocations, Name = $"Test {invocations}" };
-        };
+        }
 
         // Act
-        var result = Retry.Do(func)
+        var result = Retry.Do((var)func)
             .Attempts(3)
             .Delay(1)
             .Execute();

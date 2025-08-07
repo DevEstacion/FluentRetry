@@ -7,7 +7,7 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () => invocations++;
+        int action() => invocations++;
 
         // Act
         Retry.Do(action).Execute();
@@ -21,12 +21,12 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -43,11 +43,11 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act & Assert
         var act = () => Retry.Do(action)
@@ -64,11 +64,11 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act & Assert
         var act = () => Retry.Do(action)
@@ -87,11 +87,11 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -108,12 +108,12 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             if (invocations < 3)
                 throw new InvalidOperationException("Fails first two times");
-        };
+        }
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -133,12 +133,12 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             if (invocations < 2)
                 throw new InvalidOperationException("Fails first time");
-        };
+        }
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -162,7 +162,7 @@ public class RetryBuilderTests
         var delays = new List<long>();
         var lastTime = DateTimeOffset.UtcNow;
 
-        var action = () =>
+        void action()
         {
             var now = DateTimeOffset.UtcNow;
             if (invocations > 0)
@@ -172,7 +172,7 @@ public class RetryBuilderTests
             lastTime = now;
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -195,11 +195,11 @@ public class RetryBuilderTests
         var invocations = 0;
         var retryCallbacks = new List<(Exception ex, int attempt)>();
 
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException($"Failure {invocations}");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -224,11 +224,11 @@ public class RetryBuilderTests
         var invocations = 0;
         Exception? failureException = null;
 
-        var action = () =>
+        void action()
         {
             invocations++;
             throw new InvalidOperationException("Always fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -250,12 +250,12 @@ public class RetryBuilderTests
         var invocations = 0;
         Exception? failureException = null;
 
-        var action = () =>
+        void action()
         {
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
-        };
+        }
 
         // Act
         Retry.Do(action)
@@ -274,12 +274,12 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             if (invocations < 3)
                 throw new InvalidOperationException("Fails first two times");
-        };
+        }
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -301,7 +301,7 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () => invocations++;
+        int action() => invocations++;
 
         // Act
         Retry.Do(action)
@@ -317,12 +317,12 @@ public class RetryBuilderTests
     {
         // Arrange
         var invocations = 0;
-        var action = () =>
+        void action()
         {
             invocations++;
             if (invocations < 2)
                 throw new InvalidOperationException("Fails first time");
-        };
+        }
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
