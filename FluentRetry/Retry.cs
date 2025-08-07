@@ -1,51 +1,68 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace FluentRetry;
 
+/// <summary>
+/// Simple and fluent retry implementation for all scenarios
+/// </summary>
 [ExcludeFromCodeCoverage]
 public static class Retry
 {
-    internal static RetryConfiguration RetryConfiguration { get; set; } = new();
+    private static int _defaultAttempts = 3;
+    private static int _defaultDelayMs = 150;
 
     /// <summary>
-    ///     Returns an instance of a fluent retry class that can handle <see cref="Task" /> with results
+    /// Creates a retry operation for any operation (action or function)
     /// </summary>
-    /// <typeparam name="T">Type of results the task returns</typeparam>
-    public static GenericRetryAsync<T> WithResultAsync<T>(Func<Task<T>> runner)
+    public static RetryBuilder Do(Action action)
     {
-        return new GenericRetryAsync<T>(runner);
+        ArgumentNullException.ThrowIfNull(action);
+        return new RetryBuilder(() =>
+        {
+            action();
+            return Task.FromResult<object>(null);
+        });
     }
 
     /// <summary>
-    ///     Returns an instance of a fluent retry class that can handle results
+    /// Creates a retry operation for any async operation
     /// </summary>
-    /// <typeparam name="T">Type of results the delegate returns</typeparam>
-    public static GenericRetry<T> WithResult<T>(Func<T> runner)
+    public static RetryBuilder DoAsync(Func<Task> action)
     {
-        return new GenericRetry<T>(runner);
+        ArgumentNullException.ThrowIfNull(action);
+        return new RetryBuilder(async () =>
+        {
+            await action();
+            return null;
+        });
     }
 
     /// <summary>
-    ///     Returns an instance of a fluent retry class with no results/void
+    /// Creates a retry operation for a function that returns a value
     /// </summary>
-    public static SimpleRetryAsync WithAsync(Func<Task> runner)
+    public static RetryBuilder<T> Do<T>(Func<T> func)
     {
-        return new SimpleRetryAsync(runner);
+        ArgumentNullException.ThrowIfNull(func);
+        return new RetryBuilder<T>(() => Task.FromResult(func()));
     }
 
     /// <summary>
-    ///     Returns an instance of a fluent retry class with no results/void
+    /// Creates a retry operation for an async function that returns a value
     /// </summary>
-    public static SimpleRetry With(Action runner)
+    public static RetryBuilder<T> DoAsync<T>(Func<Task<T>> func)
     {
-        return new SimpleRetry(runner);
+        ArgumentNullException.ThrowIfNull(func);
+        return new RetryBuilder<T>(func);
     }
 
     /// <summary>
-    ///     Sets the default global retry configuration used
+    /// Sets global defaults for all retry operations
     /// </summary>
-    /// <exception cref="ArgumentNullException">Throws when <paramref name="retryConfiguration" /> is null</exception>
-    public static void SetGlobalRetryConfiguration(RetryConfiguration retryConfiguration)
+    public static void SetGlobalDefaults(int attempts = 3, int delayMs = 150)
     {
-        RetryConfiguration
-            = retryConfiguration ?? throw new ArgumentNullException(nameof(retryConfiguration));
+        _defaultAttempts = Math.Max(1, attempts);
+        _defaultDelayMs = Math.Max(0, delayMs);
     }
+
+    internal static (int attempts, int delayMs) GetDefaults() => (_defaultAttempts, _defaultDelayMs);
 }

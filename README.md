@@ -1,20 +1,17 @@
 # FluentRetry
 
-A lightweight, high-performance, and fluent retry implementation for C# with advanced features like exponential backoff, jitter strategies, predefined policies, and comprehensive observability.
+A lightweight, simple and fluent retry implementation for C# that just works. Built for simplicity and ease of use with sensible defaults.
 
 ## Features
 
-✨ **Simple & Fluent API** - Easy-to-use fluent interface for all retry scenarios  
-🚀 **High Performance** - Optimized retry logic with minimal allocations  
-📊 **Rich Observability** - Detailed retry context with timestamps and attempt tracking  
-🎯 **Multiple Jitter Strategies** - Range, percentage-based, and full jitter support  
-📋 **Predefined Policies** - Ready-to-use policies for common scenarios  
-🔧 **Flexible Configuration** - Comprehensive configuration with validation  
-🛡️ **Production Ready** - Overflow protection and robust error handling  
+✨ **Simple & Fluent API** - Easy-to-use fluent interface for all retry scenarios
+🚀 **Works Out of the Box** - Sensible defaults, no configuration required
+🎯 **Unified Methods** - Single `Do()` and `DoAsync()` methods handle all scenarios
+📋 **Predefined Configurations** - Ready-to-use settings for common scenarios
+🔧 **Flexible** - Extensive configuration options when needed
+⚡ **High Performance** - Optimized retry logic with minimal allocations
 
 ## Installation
-
-You can get the package from [nuget.org](https://www.nuget.org/packages/FluentRetry) or run the following from your terminal.
 
 ```bash
 dotnet add package FluentRetry
@@ -22,32 +19,307 @@ dotnet add package FluentRetry
 
 ## Quick Start
 
-Add the using declaration:
-
 ```csharp
 using FluentRetry;
+
+// Simple action with default settings (3 attempts, 150ms delay)
+Retry.Do(() => Console.WriteLine("Hello")).Execute();
+
+// Function with return value
+var result = Retry.Do(() => GetDataFromAPI()).Execute();
+
+// Async operations
+await Retry.DoAsync(async () => await httpClient.GetAsync(url)).ExecuteAsync();
 ```
 
-### Basic Usage
+## Basic Usage
+
+### Actions (No Return Value)
 
 ```csharp
-// Simple retry with default configuration (3 retries, 150ms delay)
-Retry.With(() => SomeOperation()).Run();
+// Simple action retry
+Retry.Do(() => Console.WriteLine("Hello")).Execute();
 
-// Async operation
-await Retry.WithAsync(async () => await SomeAsyncOperation()).Run();
+// Action with configuration
+Retry.Do(() => RiskyOperation())
+    .Attempts(5)
+    .Delay(200)
+    .WithExponentialBackoff()
+    .Execute();
 
-// With return value
-var result = Retry.WithResult(() => GetSomeValue()).Run();
-
-// Async with return value
-var result = await Retry.WithResultAsync(async () => await GetSomeValueAsync()).Run();
+// Async action
+await Retry.DoAsync(async () => await httpClient.GetAsync(url))
+    .Network() // Predefined network configuration
+    .ExecuteAsync();
 ```
 
-### Using Extension Methods
+### Functions (With Return Value)
+
+```csharp
+// Function with return value
+var result = Retry.Do(() => GetDataFromAPI())
+    .Attempts(3)
+    .OnRetry((ex, attempt) => Console.WriteLine($"Attempt {attempt} failed: {ex.Message}"))
+    .Execute();
+
+// Async function with return value
+var data = await Retry.DoAsync(async () => await database.QueryAsync())
+    .Resilient() // Uses predefined resilient configuration
+    .RetryWhen(result => result == null)
+    .ExecuteAsync();
+```
+
+## One-Line Extension Methods
+
+For simple cases, use extension methods for the most concise syntax:
 
 ```csharp
 // Simple extension method usage
+action.WithRetry();
+action.WithRetry(5); // 5 attempts
+
+// Async extensions
+await asyncAction.WithRetryAsync();
+await asyncAction.WithRetryAsync(3);
+
+// With exponential backoff
+action.WithExponentialRetry();
+action.WithExponentialRetry(attempts: 5, baseDelayMs: 200);
+
+// Functions
+var result = func.WithRetry();
+var data = await asyncFunc.WithRetryAsync();
+```
+
+## Configuration Options
+
+### Basic Configuration
+
+```csharp
+Retry.Do(action)
+    .Attempts(5)                    // Number of attempts (default: 3)
+    .Delay(100)                     // Delay between retries in ms (default: 150ms)
+    .WithExponentialBackoff()       // Doubles delay on each retry
+    .WithJitter(50)                 // Add randomness to delays (default: 50ms)
+    .ThrowOnFailure()               // Throw exception if all retries fail
+    .Execute();
+```
+
+### Exception Handling
+
+```csharp
+Retry.Do(action)
+    .OnRetry((ex, attempt) =>
+        Console.WriteLine($"Attempt {attempt} failed: {ex.Message}"))
+    .OnFailure(ex =>
+        Console.WriteLine($"All attempts failed: {ex.Message}"))
+    .Execute();
+```
+
+### Retry Conditions (For Functions)
+
+```csharp
+// Retry based on return value
+var result = Retry.Do(() => TryGetValue())
+    .Attempts(3)
+    .RetryWhen(value => value == null || value == 0)
+    .Execute();
+```
+
+## Predefined Configurations
+
+Use predefined configurations for common scenarios:
+
+```csharp
+// Fast operations - minimal delays (2 attempts, 50ms delay)
+Retry.Do(action).Fast().Execute();
+
+// Standard operations - balanced settings (3 attempts, 150ms delay) - DEFAULT
+Retry.Do(action).Standard().Execute();
+
+// Resilient operations - more retries for unreliable services (5 attempts, 500ms delay)
+Retry.Do(action).Resilient().Execute();
+
+// Network operations - exponential backoff for HTTP calls (4 attempts, 100ms delay)
+Retry.Do(action).Network().Execute();
+
+// Database operations - longer delays for database timeouts (3 attempts, 1000ms delay)
+Retry.Do(action).Database().Execute();
+```
+
+## Advanced Examples
+
+### HTTP Client with Retry
+
+```csharp
+using var httpClient = new HttpClient();
+
+// Simple HTTP retry
+var response = await Retry.DoAsync(async () =>
+        await httpClient.GetAsync("https://api.example.com/data"))
+    .Network()
+    .ExecuteAsync();
+
+// With custom error handling
+var result = await Retry.DoAsync(async () =>
+    {
+        var response = await httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    })
+    .Attempts(5)
+    .Delay(100)
+    .WithExponentialBackoff()
+    .OnRetry((ex, attempt) =>
+        Console.WriteLine($"HTTP request failed on attempt {attempt}: {ex.Message}"))
+    .ThrowOnFailure()
+    .ExecuteAsync();
+```
+
+### Database Operations
+
+```csharp
+// Database query with retry
+var users = await Retry.DoAsync(async () =>
+    {
+        using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+        return await connection.QueryAsync<User>("SELECT * FROM Users");
+    })
+    .Database()
+    .OnRetry((ex, attempt) =>
+        logger.LogWarning($"Database query failed on attempt {attempt}: {ex.Message}"))
+    .ExecuteAsync();
+```
+
+### File Operations
+
+```csharp
+// File read with retry
+var content = Retry.Do(() => File.ReadAllText(filePath))
+    .Fast()
+    .OnRetry((ex, attempt) =>
+        Console.WriteLine($"File read failed on attempt {attempt}, retrying..."))
+    .Execute();
+```
+
+### Complex Retry Logic
+
+```csharp
+// Full configuration example
+await Retry.DoAsync(async () => await SomeAsyncOperation())
+    .Attempts(5)
+    .Delay(100)
+    .WithExponentialBackoff()
+    .WithJitter(50)
+    .OnRetry((ex, attempt) =>
+        logger.LogWarning($"Attempt {attempt} failed: {ex.Message}"))
+    .OnFailure(ex =>
+        logger.LogError($"All attempts failed: {ex.Message}"))
+    .ThrowOnFailure()
+    .ExecuteAsync();
+
+// Retry based on result condition
+var result = Retry.Do(() => TryGetValue())
+    .Attempts(3)
+    .Delay(100)
+    .RetryWhen(value => value == null || value == 0)
+    .OnRetry((ex, attempt) =>
+        Console.WriteLine($"Got invalid result on attempt {attempt}, retrying..."))
+    .Execute();
+```
+
+## Global Configuration
+
+Set global defaults for all retry operations:
+
+```csharp
+// Set global defaults
+Retry.SetGlobalDefaults(attempts: 5, delayMs: 200);
+
+// All subsequent operations will use these defaults
+Retry.Do(action).Execute(); // Uses 5 attempts, 200ms delay
+```
+
+## API Reference
+
+### Core Methods
+
+| Method | Description |
+|--------|-------------|
+| `Retry.Do(Action)` | Creates retry for action without return value |
+| `Retry.DoAsync(Func<Task>)` | Creates retry for async action without return value |
+| `Retry.Do<T>(Func<T>)` | Creates retry for function with return value |
+| `Retry.DoAsync<T>(Func<Task<T>>)` | Creates retry for async function with return value |
+
+### Configuration Methods
+
+| Method | Description |
+|--------|-------------|
+| `.Attempts(int)` | Sets maximum number of attempts (default: 3) |
+| `.Delay(int)` | Sets delay between retries in milliseconds (default: 150ms) |
+| `.WithExponentialBackoff()` | Enables exponential backoff (doubles delay each retry) |
+| `.WithJitter(int)` | Sets maximum jitter in milliseconds (default: 50ms) |
+| `.ThrowOnFailure(bool)` | Whether to throw exception on final failure (default: false) |
+| `.OnRetry(Action<Exception, int>)` | Callback for each retry attempt |
+| `.OnFailure(Action<Exception>)` | Callback when all retries are exhausted |
+| `.RetryWhen(Func<T, bool>)` | Condition to retry based on result (functions only) |
+
+### Predefined Configurations
+
+| Method | Configuration |
+|--------|---------------|
+| `.Fast()` | 2 attempts, 50ms delay, 25ms jitter |
+| `.Standard()` | 3 attempts, 150ms delay, 50ms jitter (default) |
+| `.Resilient()` | 5 attempts, 500ms delay, 200ms jitter |
+| `.Network()` | 4 attempts, 100ms delay, exponential backoff, 50ms jitter |
+| `.Database()` | 3 attempts, 1000ms delay, 200ms jitter |
+
+### Extension Methods
+
+| Method | Description |
+|--------|-------------|
+| `action.WithRetry()` | Execute action with default retry |
+| `action.WithRetry(int)` | Execute action with specified attempts |
+| `action.WithExponentialRetry()` | Execute action with exponential backoff |
+| `func.WithRetry()` | Execute function with default retry |
+| `asyncAction.WithRetryAsync()` | Execute async action with default retry |
+| `asyncFunc.WithRetryAsync()` | Execute async function with default retry |
+
+## Migration from Old API
+
+If you're upgrading from an older version:
+
+| Old API | New API |
+|---------|---------|
+| `Retry.With(action)` | `Retry.Do(action)` |
+| `Retry.WithAsync(action)` | `Retry.DoAsync(action)` |
+| `Retry.WithResult<T>(func)` | `Retry.Do<T>(func)` |
+| `Retry.WithResultAsync<T>(func)` | `Retry.DoAsync<T>(func)` |
+| `.MaxAttempts(n)` | `.Attempts(n)` |
+| `.WithConfiguration(config)` | Use predefined configurations or individual methods |
+| `.UseExponentialRetry()` | `.WithExponentialBackoff()` |
+| `.ThrowOnFinalException(true)` | `.ThrowOnFailure(true)` |
+| `.RetryIf(condition)` | `.RetryWhen(condition)` |
+
+## Key Improvements
+
+1. **Unified API**: Single `Retry.Do()` and `Retry.DoAsync()` methods handle all scenarios
+2. **Simple Configuration**: Fluent builder with intuitive method names
+3. **Predefined Configurations**: Ready-to-use settings for common scenarios
+4. **Extension Methods**: One-line retry for simple cases
+5. **Works Out of the Box**: Sensible defaults, no configuration required
+6. **Cleaner**: Fewer classes and methods to understand
+7. **Type-Safe**: Proper generic support for return values
+8. **Performance**: Optimized with minimal allocations
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 SomeOperation.WithRetry();
 
 // Async with custom configuration
@@ -133,15 +405,15 @@ Retry.With(fileOperation).WithConfiguration(RetryPolicies.FileIO).Run();
 ```csharp
 // Exponential backoff with custom parameters
 var exponentialConfig = RetryPolicies.ExponentialBackoff(
-    maxRetries: 4, 
-    baseDelayMs: 100, 
+    maxRetries: 4,
+    baseDelayMs: 100,
     jitterPercentage: 20
 );
 
 // Linear backoff
 var linearConfig = RetryPolicies.LinearBackoff(
-    maxRetries: 3, 
-    baseDelayMs: 100, 
+    maxRetries: 3,
+    baseDelayMs: 100,
     incrementMs: 100
 );
 ```
@@ -163,12 +435,12 @@ Handle exceptions during retries and on final failure:
 
 ```csharp
 Retry.With(action)
-    .WithOnException(context => 
+    .WithOnException(context =>
     {
         Console.WriteLine($"Attempt {context.AttemptNumber} failed: {context.ExceptionMessage}");
         Console.WriteLine($"Next retry in {context.RetrySleepInMs}ms");
     })
-    .WithOnFinalException(context => 
+    .WithOnFinalException(context =>
     {
         Console.WriteLine($"All {context.TotalRetryCount + 1} attempts failed");
         LogError(context.Exception);
@@ -228,14 +500,14 @@ Retry.With(action).Run();
 using var httpClient = new HttpClient();
 
 // Retry HTTP calls with network-optimized settings
-var response = await Retry.WithResultAsync(async () => 
+var response = await Retry.WithResultAsync(async () =>
     {
         var result = await httpClient.GetAsync("https://api.example.com/data");
         result.EnsureSuccessStatusCode();
         return result;
     })
     .WithConfiguration(RetryPolicies.Network)
-    .WithOnException(context => 
+    .WithOnException(context =>
         Console.WriteLine($"HTTP request failed, retrying in {context.RetrySleepInMs}ms..."))
     .ThrowOnFinalException(true)
     .Run();
@@ -255,8 +527,8 @@ var data = await Retry.WithResultAsync(async () =>
     })
     .WithConfiguration(RetryPolicies.Database)
     .UseExponentialRetry()
-    .WithOnException(context => 
-        logger.LogWarning("Database operation failed on attempt {Attempt}: {Error}", 
+    .WithOnException(context =>
+        logger.LogWarning("Database operation failed on attempt {Attempt}: {Error}",
             context.AttemptNumber, context.ExceptionMessage))
     .Run();
 ```
@@ -271,7 +543,7 @@ var fileContent = Retry.WithResult(() => File.ReadAllText("important-file.txt"))
         RetrySleepInMs = 50,
         Jitter = Jitter.Range(10, 100)  // Random jitter between 10-100ms
     })
-    .WithOnException(context => 
+    .WithOnException(context =>
     {
         if (context.Exception is IOException)
             Console.WriteLine($"File locked, retrying in {context.RetrySleepInMs}ms...");
