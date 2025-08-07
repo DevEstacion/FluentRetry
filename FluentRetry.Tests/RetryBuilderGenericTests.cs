@@ -304,16 +304,16 @@ public class RetryBuilderGenericTests
     {
         // Arrange
         var invocations = 0;
-        var func()
+        var func = () =>
         {
             invocations++;
             if (invocations == 1)
                 throw new InvalidOperationException("First attempt fails");
             return new { Id = invocations, Name = $"Test {invocations}" };
-        }
+        };
 
         // Act
-        var result = Retry.Do((var)func)
+    var result = Retry.Do(func)
             .Attempts(3)
             .Delay(1)
             .Execute();

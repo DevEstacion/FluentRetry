@@ -43,7 +43,7 @@ public class IntegrationTests
         var attemptCount = 0;
         var timeoutOccursOn = new[] { 1, 2 }; // Timeout on first two attempts
 
-        async var databaseSimulation()
+        var databaseSimulation = async () =>
         {
             await Task.Delay(1); // Simulate async database call
             attemptCount++;
@@ -52,10 +52,10 @@ public class IntegrationTests
                 throw new TimeoutException("Database connection timeout");
 
             return new { UserId = 123, Name = "John Doe" };
-        }
+        };
 
         // Act
-        var result = await Retry.DoAsync((var)databaseSimulation)
+    var result = await Retry.DoAsync(databaseSimulation)
             .Database()
             .OnRetry((ex, attempt) => ex.Should().BeOfType<TimeoutException>())
             .ExecuteAsync();
