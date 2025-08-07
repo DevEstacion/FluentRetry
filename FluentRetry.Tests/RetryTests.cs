@@ -1,5 +1,8 @@
 namespace FluentRetry.Tests;
 
+// Tests in this class modify global defaults; run them in an isolated collection to avoid
+// collisions with other parallel tests.
+[Collection("GlobalDefaultsSerial")]
 public class RetryTests
 {
     [Fact]
